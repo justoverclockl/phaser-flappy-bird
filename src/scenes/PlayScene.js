@@ -13,6 +13,10 @@ class PlayScene extends Phaser.Scene {
         this.pipeVerticalDistanceRange = [100, 250];
         this.horizontalDistanceRange = [500, 550];
         this.flapVelocity = 200;
+        this.score = 0
+        this.scoreText = ""
+        this.bestScore = 0
+        this.bestScoreText = ""
     }
 
     preload() {
@@ -27,6 +31,7 @@ class PlayScene extends Phaser.Scene {
         this.createBird()
         this.createPipes()
         this.createColliders()
+        this.createScore()
         this.handleInputs()
     }
 
@@ -46,7 +51,7 @@ class PlayScene extends Phaser.Scene {
             .sprite(this.config.startPosition.x, this.config.startPosition.y, 'bird')
             .setOrigin(0)
 
-        this.bird.body.gravity.y = 400
+        this.bird.body.gravity.y = 600
         this.bird.setCollideWorldBounds(true)
     }
 
@@ -71,6 +76,14 @@ class PlayScene extends Phaser.Scene {
 
     createColliders() {
         this.physics.add.collider(this.bird, this.pipes, this.gameOver, null, this)
+    }
+
+    createScore() {
+        this.score = 0
+        const bestScore = localStorage.getItem('flappyScore')
+        this.scoreText = this.add.text(16, 16, `Score: ${0}`, { fontSize: '32px', fill: 'black' })
+
+        this.bestScoreText = this.add.text(16, 50, `Best Score: ${bestScore || 0}`, { fontSize: '18px', fill: 'black' })
     }
 
     handleInputs() {
@@ -117,14 +130,27 @@ class PlayScene extends Phaser.Scene {
 
                 if (tempPipes.length === 2) {
                     this.placePipe(...tempPipes)
+                    this.increaseScore()
+                    this.saveBestScore()
                 }
             }
         })
     }
 
+    saveBestScore() {
+        const bestScoreText = localStorage.getItem('flappyScore')
+        const bestScore = bestScoreText ? Number(bestScoreText) : 0
+
+        if (!bestScore || this.score > bestScore) {
+            localStorage.setItem('flappyScore', this.score)
+        }
+    }
+
     gameOver() {
         this.physics.pause()
         this.bird.setTint(0xff0000)
+
+        this.saveBestScore()
 
         this.time.addEvent({
             delay: 2000,
@@ -137,6 +163,11 @@ class PlayScene extends Phaser.Scene {
 
     fly() {
         this.bird.body.velocity.y = -this.flapVelocity
+    }
+
+    increaseScore() {
+        this.score++
+        this.scoreText.setText(`Score: ${this.score}`)
     }
 }
 
